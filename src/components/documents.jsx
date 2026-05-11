@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Document from './document';
 
+const API = 'https://taskflow-vex7.onrender.com';
+
 export default function Documents({ user }) {
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -12,7 +15,7 @@ export default function Documents({ user }) {
   async function fetchDocuments() {
     try {
       const response = await fetch(
-        `http://localhost:4000/api/v1/documents?team_id=${user.team_id}&role=${user.role}`
+        `${API}/api/v1/documents?team_id=${user.team_id}&role=${user.role}`
       );
       const data = await response.json();
       setDocuments(data);

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
+const API = 'https://taskflow-vex7.onrender.com';
+
 export default function Document({ user, docId }) {
   const [doc, setDoc] = useState(null);
   const [suggesting, setSuggesting] = useState(false);
@@ -7,6 +9,7 @@ export default function Document({ user, docId }) {
   const [history, setHistory] = useState([]);
   const [message, setMessage] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchDocument();
     fetchHistory();
@@ -14,7 +17,7 @@ export default function Document({ user, docId }) {
 
   async function fetchDocument() {
     try {
-      const response = await fetch(`http://localhost:4000/api/v1/documents/${docId}`);
+      const response = await fetch(`${API}/api/v1/documents/${docId}`);
       const data = await response.json();
       setDoc(data);
       setContent(data.content);
@@ -23,20 +26,20 @@ export default function Document({ user, docId }) {
     }
   }
 
-async function fetchHistory() {
-  try {
-    const response = await fetch(`http://localhost:4000/api/v1/documents/${docId}/history`);
-    const data = await response.json();
-    setHistory(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error('Error fetching history:', err);
-    setHistory([]);
+  async function fetchHistory() {
+    try {
+      const response = await fetch(`${API}/api/v1/documents/${docId}/history`);
+      const data = await response.json();
+      setHistory(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error fetching history:', err);
+      setHistory([]);
+    }
   }
-}
 
   async function handleSuggest() {
     try {
-      await fetch('http://localhost:4000/api/v1/suggestions', {
+      await fetch(`${API}/api/v1/suggestions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,17 +70,14 @@ async function fetchHistory() {
           </p>
         </div>
 
-        {/* Viewer — read only */}
         {user.role === 'viewer' && (
           <p style={{ lineHeight: '1.8', color: '#333' }}>{doc.content}</p>
         )}
 
-        {/* Admin — read only */}
         {user.role === 'admin' && (
           <p style={{ lineHeight: '1.8', color: '#333' }}>{doc.content}</p>
         )}
 
-        {/* Editor — suggest edit */}
         {user.role === 'editor' && (
           <>
             {!suggesting ? (
@@ -113,7 +113,6 @@ async function fetchHistory() {
         )}
       </div>
 
-      {/* Version History */}
       <div>
         <h3>Version History</h3>
         {history.length === 0 && <p style={{ color: '#888' }}>No history yet.</p>}
