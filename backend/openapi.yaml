@@ -1,0 +1,221 @@
+openapi: 3.0.3
+info:
+  title: TaskFlow API
+  description: |
+    Document management system with role-based access.
+    - **viewer** - read document and history
+    - **editor** - suggest edits
+    - **admin** - approve/reject suggestions
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:4000/api/v1
+    description: Local development
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        username: { type: string }
+        role:
+          type: string
+          enum: [viewer, editor, admin]
+
+    Document:
+      type: object
+      properties:
+        id: { type: integer }
+        content: { type: string }
+        updated_by: { type: string }
+        updated_at: { type: string, format: date-time }
+
+    Suggestion:
+      type: object
+      properties:
+        id: { type: integer }
+        suggested_content: { type: string }
+        original_content: { type: string }
+        suggested_by: { type: string }
+        status:
+          type: string
+          enum: [pending, approved, rejected]
+        created_at: { type: string, format: date-time }
+
+    History:
+      type: object
+      properties:
+        id: { type: integer }
+        content: { type: string }
+        changed_by: { type: string }
+        action: { type: string }
+        changed_at: { type: string, format: date-time }
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password, role]
+              properties:
+                username: { type: string, example: alice }
+                password: { type: string, example: alice123 }
+                role: { type: string, enum: [viewer, editor, admin] }
+      responses:
+        '200':
+          description: User created
+        '400':
+          description: Username already exists
+
+  /auth/login:
+    post:
+      summary: Login and get JWT token
+      security: []
+      tags: [Auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string, example: admin }
+                password: { type: string, example: admin123 }
+      responses:
+        '200':
+          description: JWT token returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Invalid credentials
+
+  /document:
+    get:
+      summary: Get current document
+      tags: [Document]
+      responses:
+        '200':
+          description: Current document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+    put:
+      summary: Update document (admin only)
+      tags: [Document]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content, username]
+              properties:
+                content: { type: string }
+                username: { type: string }
+      responses:
+        '200':
+          description: Document updated
+        '403':
+          description: Admin only
+
+  /history:
+    get:
+      summary: Get version history
+      tags: [History]
+      responses:
+        '200':
+          description: List of history entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/History'
+
+  /suggestions:
+    get:
+      summary: Get all suggestions (admin only)
+      tags: [Suggestions]
+      responses:
+        '200':
+          description: List of suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Suggestion'
+    post:
+      summary: Submit a suggestion (editor only)
+      tags: [Suggestions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [suggested_content, username]
+              properties:
+                suggested_content: { type: string }
+                username: { type: string }
+      responses:
+        '201':
+          description: Suggestion submitted
+
+  /suggestions/{id}/approve:
+    put:
+      summary: Approve a suggestion (admin only)
+      tags: [Suggestions]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username: { type: string }
+      responses:
+        '200':
+          description: Suggestion approved
+
+  /suggestions/{id}/reject:
+    put:
+      summary: Reject a suggestion (admin only)
+      tags: [Suggestions]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Suggestion rejected
