@@ -2,6 +2,57 @@ import React, { useState, useEffect } from 'react';
 
 const API = 'https://taskflow-vex7.onrender.com';
 
+function DocCard({ doc, onSelect }) {
+  const [pendingCount, setPendingCount] = useState(0);
+  const [suggestedBy, setSuggestedBy] = useState([]);
+
+  useEffect(() => {
+    fetch(`${API}/api/v1/suggestions/${doc.id}`)
+      .then(r => r.json())
+      .then(data => {
+        const pending = data.filter(s => s.status === 'pending');
+        setPendingCount(pending.length);
+        const names = [...new Set(pending.map(s => s.suggested_by))];
+        setSuggestedBy(names);
+      })
+      .catch(err => console.error(err));
+  }, [doc.id]);
+
+  return (
+    <div onClick={() => onSelect(doc)}
+      style={{
+        background: 'white',
+        border: `1px solid ${pendingCount > 0 ? '#ff9900' : '#ddd'}`,
+        borderRadius: '8px',
+        padding: '16px',
+        marginBottom: '12px',
+        cursor: 'pointer'
+      }}
+      onMouseOver={e => e.currentTarget.style.borderColor = '#111'}
+      onMouseOut={e => e.currentTarget.style.borderColor = pendingCount > 0 ? '#ff9900' : '#ddd'}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <h3 style={{ margin: 0 }}>{doc.title}</h3>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {pendingCount > 0 ? (
+            <span style={{ fontSize: '12px', background: '#ff9900', color: 'white', padding: '2px 10px', borderRadius: '20px', fontWeight: 'bold' }}>
+              {pendingCount} pending
+            </span>
+          ) : (
+            <span style={{ fontSize: '12px', background: '#e6ffed', color: 'green', padding: '2px 10px', borderRadius: '20px' }}>
+              No pending
+            </span>
+          )}
+        </div>
+      </div>
+      {suggestedBy.length > 0 && (
+        <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#888' }}>
+          Suggested by: <strong>{suggestedBy.join(', ')}</strong>
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function Suggestions({ user }) {
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
@@ -15,9 +66,7 @@ export default function Suggestions({ user }) {
 
   async function fetchDocuments() {
     try {
-      const response = await fetch(
-        `${API}/api/v1/documents?team_id=${user.team_id}&role=${user.role}`
-      );
+      const response = await fetch(`${API}/api/v1/documents?role=admin`);
       const data = await response.json();
       setDocuments(data);
     } catch (err) {
@@ -68,6 +117,13 @@ export default function Suggestions({ user }) {
     }
   }
 
+  // Group documents by team
+  const teams = documents.reduce((acc, doc) => {
+    if (!acc[doc.team_name]) acc[doc.team_name] = [];
+    acc[doc.team_name].push(doc);
+    return acc;
+  }, {});
+
   return (
     <div style={{ padding: '24px', maxWidth: '800px', margin: '0 auto' }}>
       <h2>Suggestions</h2>
@@ -75,29 +131,32 @@ export default function Suggestions({ user }) {
 
       {!selectedDoc ? (
         <>
-          <p style={{ color: '#888', fontSize: '13px' }}>Select a document to review suggestions</p>
-          {documents.map(doc => (
-            <div key={doc.id} onClick={() => handleSelectDoc(doc)}
-              style={{ background: 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '16px', marginBottom: '12px', cursor: 'pointer' }}
-              onMouseOver={e => e.currentTarget.style.borderColor = '#111'}
-              onMouseOut={e => e.currentTarget.style.borderColor = '#ddd'}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-  <h3 style={{ margin: 0 }}>{doc.title}</h3>
-  <span style={{ fontSize: '12px', background: '#e8f4ff', color: '#0066cc', padding: '2px 10px', borderRadius: '20px', fontWeight: '500' }}>
-    {doc.team_name}
-  </span>
-</div>
-<p style={{ margin: '4px 0 0', fontSize: '12px', color: '#aaa' }}>Click to review suggestions</p>
+          {Object.keys(teams).map(teamName => (
+            <div key={teamName} style={{ marginBottom: '32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <h3 style={{ margin: 0 }}>{teamName} Team</h3>
+                <span style={{ fontSize: '12px', background: '#e8f4ff', color: '#0066cc', padding: '2px 10px', borderRadius: '20px' }}>
+                  {teams[teamName].length} {teams[teamName].length === 1 ? 'document' : 'documents'}
+                </span>
+              </div>
+              {teams[teamName].map(doc => (
+                <DocCard key={doc.id} doc={doc} onSelect={handleSelectDoc} />
+              ))}
             </div>
           ))}
         </>
       ) : (
         <>
-          <button onClick={() => { setSelectedDoc(null); setSuggestions([]); }}
+          <button onClick={() => { setSelectedDoc(null); setSuggestions([]); setMessage(''); }}
             style={{ marginBottom: '16px', padding: '6px 16px', background: '#111', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
             ← Back
           </button>
-          <h3>{selectedDoc.title} — Suggestions</h3>
+          <div style={{ marginBottom: '16px' }}>
+            <h3 style={{ margin: '0 0 4px' }}>{selectedDoc.title}</h3>
+            <span style={{ fontSize: '12px', background: '#e8f4ff', color: '#0066cc', padding: '2px 10px', borderRadius: '20px' }}>
+              {selectedDoc.team_name} Team
+            </span>
+          </div>
 
           {suggestions.length === 0 && <p style={{ color: '#888' }}>No suggestions for this document.</p>}
 
