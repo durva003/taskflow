@@ -1,12 +1,21 @@
 const { Pool } = require('pg');
 
-const pool = new Pool({
-  user: process.env.USER,
-  host: 'localhost',
-  database: 'taskflow',
-  password: '',
-  port: 5432,
-});
+console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Found' : 'NOT FOUND');
+
+const pool = new Pool(
+  process.env.DATABASE_URL
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      }
+    : {
+        user: process.env.USER,
+        host: 'localhost',
+        database: 'taskflow',
+        password: '',
+        port: 5432,
+      }
+);
 
 pool.connect((err, client, release) => {
   if (err) {
