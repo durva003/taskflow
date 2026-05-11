@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
 const pool = require('./db');
 const swaggerUi = require('swagger-ui-express');
 const YAML = require('yamljs');
-const swaggerDocument = YAML.load('./openapi.yaml');
+const swaggerDocument = YAML.load(__dirname + '/openapi.yaml');
 
 const app = express();
 app.use(cors());
