@@ -15,26 +15,24 @@ export default function Dashboard({ user, onLogout }) {
     }
   }, [user.role]);
 
-  async function fetchPendingCount() {
-    try {
-      // Fetch all documents first
-      const docsRes = await fetch(
-        `http://localhost:4000/api/v1/documents?role=admin`
-      );
-      const docs = await docsRes.json();
+async function fetchPendingCount() {
+  try {
+    const docsRes = await fetch(
+      `https://taskflow-vex7.onrender.com/api/v1/documents?role=admin`
+    );
+    const docs = await docsRes.json();
 
-      // Fetch suggestions for each document
-      let count = 0;
-      for (const doc of docs) {
-        const sugRes = await fetch(`http://localhost:4000/api/v1/suggestions/${doc.id}`);
-        const sugs = await sugRes.json();
-        count += sugs.filter(s => s.status === 'pending').length;
-      }
-      setPendingCount(count);
-    } catch (err) {
-      console.error('Error fetching pending count:', err);
+    let count = 0;
+    for (const doc of docs) {
+      const sugRes = await fetch(`https://taskflow-vex7.onrender.com/api/v1/suggestions/${doc.id}`);
+      const sugs = await sugRes.json();
+      count += sugs.filter(s => s.status === 'pending').length;
     }
+    setPendingCount(count);
+  } catch (err) {
+    console.error('Error fetching pending count:', err);
   }
+}
 
   return (
     <div>
