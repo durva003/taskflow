@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 
+const API = 'https://taskflow-vex7.onrender.com';
+
 export default function Suggestions({ user }) {
   const [documents, setDocuments] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
   const [suggestions, setSuggestions] = useState([]);
   const [message, setMessage] = useState('');
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchDocuments();
   }, []);
@@ -13,7 +16,7 @@ export default function Suggestions({ user }) {
   async function fetchDocuments() {
     try {
       const response = await fetch(
-        `http://localhost:4000/api/v1/documents?team_id=${user.team_id}&role=${user.role}`
+        `${API}/api/v1/documents?team_id=${user.team_id}&role=${user.role}`
       );
       const data = await response.json();
       setDocuments(data);
@@ -24,7 +27,7 @@ export default function Suggestions({ user }) {
 
   async function fetchSuggestions(docId) {
     try {
-      const response = await fetch(`http://localhost:4000/api/v1/suggestions/${docId}`);
+      const response = await fetch(`${API}/api/v1/suggestions/${docId}`);
       const data = await response.json();
       setSuggestions(data);
     } catch (err) {
@@ -39,7 +42,7 @@ export default function Suggestions({ user }) {
 
   async function handleApprove(id) {
     try {
-      await fetch(`http://localhost:4000/api/v1/suggestions/${id}/approve`, {
+      await fetch(`${API}/api/v1/suggestions/${id}/approve`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: user.username })
@@ -53,7 +56,7 @@ export default function Suggestions({ user }) {
 
   async function handleReject(id) {
     try {
-      await fetch(`http://localhost:4000/api/v1/suggestions/${id}/reject`, {
+      await fetch(`${API}/api/v1/suggestions/${id}/reject`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: user.username })
@@ -70,7 +73,6 @@ export default function Suggestions({ user }) {
       <h2>Suggestions</h2>
       {message && <p style={{ color: 'green' }}>{message}</p>}
 
-      {/* Document selector */}
       {!selectedDoc ? (
         <>
           <p style={{ color: '#888', fontSize: '13px' }}>Select a document to review suggestions</p>
@@ -79,8 +81,13 @@ export default function Suggestions({ user }) {
               style={{ background: 'white', border: '1px solid #ddd', borderRadius: '8px', padding: '16px', marginBottom: '12px', cursor: 'pointer' }}
               onMouseOver={e => e.currentTarget.style.borderColor = '#111'}
               onMouseOut={e => e.currentTarget.style.borderColor = '#ddd'}>
-              <h3 style={{ margin: '0 0 4px' }}>{doc.title}</h3>
-              <p style={{ margin: 0, fontSize: '12px', color: '#aaa' }}>{doc.team_name}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+  <h3 style={{ margin: 0 }}>{doc.title}</h3>
+  <span style={{ fontSize: '12px', background: '#e8f4ff', color: '#0066cc', padding: '2px 10px', borderRadius: '20px', fontWeight: '500' }}>
+    {doc.team_name}
+  </span>
+</div>
+<p style={{ margin: '4px 0 0', fontSize: '12px', color: '#aaa' }}>Click to review suggestions</p>
             </div>
           ))}
         </>

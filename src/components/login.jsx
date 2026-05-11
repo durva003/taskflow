@@ -5,19 +5,17 @@ export default function Login({ onLogin }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
-
     try {
-  const response = await fetch('https://taskflow-vex7.onrender.com/api/v1/auth/login', {
+      const response = await fetch('https://taskflow-vex7.onrender.com/api/v1/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password })
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setError('');
         localStorage.setItem('token', data.token);
@@ -26,7 +24,6 @@ export default function Login({ onLogin }) {
       } else {
         setError(data.error || 'Wrong username or password');
       }
-
     } catch (err) {
       setError('Cannot connect to server');
     }
@@ -53,12 +50,33 @@ export default function Login({ onLogin }) {
 
           <div>
             <label>Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={{ paddingRight: '40px' }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: 'absolute',
+                  right: '10px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '18px',
+                  color: '#888',
+                  padding: '0',
+                  width: 'auto'
+                }}>
+                {showPassword ? '🙈' : '👁️'}
+              </button>
+            </div>
           </div>
 
           <button type="submit">Sign In</button>
